@@ -1,0 +1,220 @@
+module alu(
+  input [3:0]a,b,
+  input [2:0]alu_sel,
+  output reg [3:0]result
+);
+  
+  always @(*) begin
+    case(alu_sel)
+      3'd0:result=a+b;
+      3'd1:result=a-b;
+      3'd2:result=a&b;
+      3'd3:result=a|b;
+      3'd4:result=a^b;
+      3'd5:result=~a;
+      default:result=4'd0;
+    endcase
+  end
+endmodule
+
+module accumulator(
+  input clk,reset,load_acc,
+  input [3:0]acc_in,
+  output reg[3:0]acc_out
+);
+  
+  always @(posedge clk or negedge reset) begin
+    if(!reset)
+      acc_out<=4'd0;
+    else if(load_acc)
+      acc_out<=acc_in;
+  end
+endmodule
+
+module data_memory(
+  input clk,
+  input [3:0]address,d_in,
+  input write_en,
+  output [3:0]d_out
+);
+  
+  reg [3:0]mem[0:15];
+  
+  assign d_out=mem[address];
+  
+  always @(posedge clk) begin
+    if(write_en)  begin
+      mem[address]<=d_in;
+    end  
+  end
+endmodule
+
+module program_memory(
+  input [3:0]address,
+  output reg [7:0]instr //instruction of 8 bits
+);
+  always @(*) begin
+    case(address)
+      4'd0:instr=8'b0000_0001;
+      4'd1:instr=8'b0010_0010;
+      4'd2:instr=8'b0011_0010;
+      4'd3:instr=8'b0100_0010;
+      4'd4:instr=8'b0101_0010;
+      4'd5:instr=8'b0110_0010;
+      4'd6:instr=8'b0111_0000;
+      4'd7:instr=8'b1111_0000; //halt
+      default:instr=8'b1111_0000;
+    endcase   
+  end
+endmodule
+
+module control_unit(
+  input [3:0]opcode,
+  output reg mem_we,
+  output reg load_acc,
+  output reg [2:0]alu_sel,
+  output reg halt
+);
+  always @(*) begin
+    mem_we=1'b0;
+    load_acc=1'b0;
+    alu_sel=3'b000;
+    halt=1'b0;
+    
+    case(opcode)
+      4'b0000:load_acc=1;
+      
+      4'b0001:mem_we=1;
+      
+      4'b0010:begin //ADD
+        load_acc=1;
+        alu_sel=3'b000;
+      end
+      
+      4'b0011:begin //SUB
+        load_acc=1;
+        alu_sel=3'b001;
+      end
+      
+      4'b0100:begin
+        load_acc=1;
+        alu_sel=3'b010;
+      end
+      
+      4'b0101:begin
+        load_acc=1;
+        alu_sel=3'b011;
+      end
+      
+      4'b0110:begin
+        load_acc=1;
+        alu_sel=3'b100;
+      end
+      
+      4'b0111:begin
+        load_acc=1;
+        alu_sel=3'b101;
+      end
+      
+      4'b1111:halt=1;
+      
+    endcase
+  end
+endmodule
+
+module program_counter(
+  input clk,reset,halt,
+  output reg [3:0]pc
+);
+  
+  always @(posedge clk or negedge reset) begin
+    if(!reset)
+      pc<=4'd0;
+    else if(!halt)
+      pc<=pc+1;
+  end
+endmodule
+
+module simple_cpu(
+  input clk,
+  input reset
+);
+
+  wire [3:0] pc;
+  wire [7:0] instr;
+  wire [3:0] opcode;
+  wire [3:0] operand;
+
+  wire mem_we;
+  wire load_acc;
+  wire [2:0] alu_sel;
+  wire halt;
+
+  wire [3:0] acc_out;
+  wire [3:0] mem_out;
+  wire [3:0] alu_result;
+
+  assign opcode  = instr[7:4];
+  assign operand = instr[3:0];
+
+   //program counter
+  
+  program_counter PC(
+    .clk(clk),
+    .reset(reset),
+    .halt(halt),
+    .pc(pc)
+  );
+
+ 
+  // Program Memory
+  
+  program_memory PM(
+    .address(pc),
+    .instr(instr)
+  );
+
+  
+  // Control Unit
+  
+  control_unit CU(
+    .opcode(opcode),
+    .mem_we(mem_we),
+    .load_acc(load_acc),
+    .alu_sel(alu_sel),
+    .halt(halt)
+  );
+
+ 
+  // Data Memory
+ 
+  data_memory DM(
+    .clk(clk),
+    .address(operand),
+    .d_in(acc_out),
+    .write_en(mem_we),
+    .d_out(mem_out)
+  );
+
+  
+  // ALU
+  
+  alu ALU(
+    .a(acc_out),
+    .b(mem_out),
+    .alu_sel(alu_sel),
+    .result(alu_result)
+  );
+
+ 
+  // Accumulator
+ 
+  accumulator ACC(
+    .clk(clk),
+    .reset(reset),
+    .load_acc(load_acc),
+    .acc_in(alu_result),
+    .acc_out(acc_out)
+  );
+
+endmodule
