@@ -1,0 +1,32 @@
+ Time | PC   | Instr   | acc_out
+0 | 0000--> 0 | 0000_0001 | 0000
+15 | 0001--> 1 | 0010_0010 | 0101
+25 | 0010--> 2 | 0011_0010 | 1000
+35 | 0011--> 3 | 0100_0010 | 0101
+45 | 0100--> 4 | 0101_0010 | 0001
+55 | 0101--> 5 | 0110_0010 | 0011
+65 | 0110--> 6 | 0111_0000 | 0000
+75 | 0111--> 7 | 1111_0000 | 1111
+testbench.sv:34: $finish called at 200 (1s)
+
+Output Explanation:
+
+The output is obtained from simulating the 4-bit accumulator-based CPU. The program executes instructions stored in program memory one by one.
+
+Initially, the accumulator is zero. Data memory is preloaded with 5 at address 1 and 3 at address 2.
+
+At PC=0, the instruction loads the accumulator, so it remains zero.
+
+At PC=1, the ADD instruction adds memory value 5 to the accumulator, so the accumulator becomes 5.
+
+At PC=2, the SUB instruction subtracts memory value 3 from the accumulator, resulting in 8.
+
+At PC=3, the AND instruction performs a bitwise AND with memory value 3, resulting in 0.
+
+At PC=4, the OR instruction performs a bitwise OR with memory value 3, resulting in 7.
+
+At PC=5, the XOR instruction performs a bitwise XOR with memory value 3, resulting in 2.
+
+At PC=6, the NOT instruction inverts the accumulator value 3, resulting in 12.
+
+At PC=7, the HALT instruction stops the CPU execution.
