@@ -1,0 +1,38 @@
+module tb_simple_cpu;
+  reg clk,reset;
+  
+  simple_cpu dut(
+    .clk(clk),
+    .reset(reset)
+  );
+  
+  always #5 clk=~clk;
+  
+  initial begin
+    clk=0;
+    reset=0;
+    #10 reset=1;
+  end
+  
+  initial begin
+    dut.DM.mem[1]=4'd5;
+    dut.DM.mem[2]=4'd3;
+  end
+  
+  initial begin
+    $dumpfile("dump.vcd");
+    $dumpvars(0,tb_simple_cpu);
+  end
+  
+  initial begin
+    $display(" Time | PC   | Instr   | acc_out");
+    $monitor("%0t | %b-->%d | %b_%b | %b",$time,dut.pc,dut.pc,dut.instr[7:4],dut.instr[3:0],dut.acc_out);
+  end
+  
+  initial begin
+    #200;
+    $finish;
+  end
+endmodule
+  
+  
